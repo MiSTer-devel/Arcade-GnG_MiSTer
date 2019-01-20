@@ -85,7 +85,7 @@ assign HDMI_ARX = status[1] ? 8'd16 : 8'd4;
 assign HDMI_ARY = status[1] ? 8'd9  : 8'd3;
 
 `include "build_id.v" 
-localparam CONF_STR = {
+localparam CONF_STR1 = {
 	"A.GnG;;", 
 	"-;",
 	"O1,Aspect Ratio,Original,Wide;",
@@ -93,7 +93,11 @@ localparam CONF_STR = {
 	"-;",
 	"O89,Lives,3,4,5,7;",
 	"OAB,+1 Life,20K 70K Every 70K,30K 80K Every 80K,20K and 80K Only,30K and 80K Only;",
-	"OCD,Difficulty,Normal,Easy,Hard,Very Hard;",
+	"OCD,Difficulty,Normal,Easy,Hard,Very Hard;"
+};
+
+localparam CONF_STR2 = {
+	"E,Invincibility,Off,On;",
 	"-;",
 	"O6,PSG,Enabled,Disabled;",
 	"O7,FM,Enabled,Disabled;",
@@ -140,12 +144,12 @@ wire  [8:0] joy_0, joy_1;
 
 wire        forced_scandoubler;
 
-hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
+hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + 1)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
 
-	.conf_str(CONF_STR),
+	.conf_str({CONF_STR1,inv_ena ? "O" : "+",CONF_STR2}),
 
 	.buttons(buttons),
 	.status(status),
@@ -287,7 +291,7 @@ jtgng_game game
 	.enable_scr(1),
 	.enable_obj(1),
 
-	.dipsw({1'b1,~status[13:12],~status[11:10],1'b0,~status[9:8],8'h5F}),
+	.dipsw({~inv_ena | ~status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],8'h5F}),
 
 	.enable_psg(~status[6]),
 	.enable_fm(~status[7]),
@@ -296,5 +300,20 @@ jtgng_game game
 
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 1;
+
+
+reg inv_ena = 0;
+always @(posedge clk_sys) begin
+	reg [3:0] flg;
+	if(ioctl_wr) begin
+		if(ioctl_addr == 0) flg[0] <= (ioctl_dout == 'h10);
+		if(ioctl_addr == 1) flg[1] <= (ioctl_dout == 'h83);
+		if(ioctl_addr == 2) flg[2] <= (ioctl_dout == 'h00);
+		if(ioctl_addr == 3) flg[3] <= (ioctl_dout == 'h80);
+	end
+	
+	inv_ena <= &flg;
+end
+
 
 endmodule
