@@ -323,22 +323,21 @@ wire clk_100m;
 wire clk_hdmi  = ~HDMI_TX_CLK;  // Internal HDMI clock, inverted in relation to external clock
 wire clk_audio = FPGA_CLK3_50;
 
-/////////////////////////  SYSTEM MODULE  ////////////////////////////////
+////////////////////  SYSTEM MEMORY & SCALER  /////////////////////////
 
 wire reset;
 sysmem_lite sysmem
 (
 	//Reset/Clock
-	.reset_reset_req(reset_req),
-	.reset_reset(reset),
-	.ctl_clock(clk_100m),
+	.reset_core_req(reset_req),
+	.reset_out(reset),
+	.clock(clk_100m),
 
 	//DE10-nano has no reset signal on GPIO, so core has to emulate cold reset button.
-	.reset_cold_req(~btn_reset),
-	.reset_warm_req(0),
+	.reset_hps_cold_req(~btn_reset),
 
 	//64-bit DDR3 RAM access
-	.ramclk2_clk(clk_audio),
+	.ram2_clk(clk_audio),
 	.ram2_address(aram_address),
 	.ram2_burstcount(aram_burstcount),
 	.ram2_waitrequest(aram_waitrequest),
