@@ -103,6 +103,8 @@ localparam CONF_STR2 = {
 	"O6,PSG,Enabled,Disabled;",
 	"O7,FM,Enabled,Disabled;",
 	"-;",
+	"F,ROM,Load alternate ROM;",
+	"-;",
 	"R0,Reset;",
 	"J,Fire,Jump,Start 1P,Start 2P,Coin;",
 	"V,v",`BUILD_DATE, " http://patreon.com/topapate;"
