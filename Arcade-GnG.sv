@@ -275,7 +275,7 @@ jtgng_game game
 	.enable_scr(1),
 	.enable_obj(1),
 
-	.dipsw({~inv_ena | status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],4'h5,{4{status[15]}}}),
+	.dipsw({~inv_ena | ~status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],4'h5,{4{status[15]}}}),
 
 	.enable_psg(~status[6]),
 	.enable_fm(~status[7]),
