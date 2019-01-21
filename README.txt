@@ -10,14 +10,18 @@
 -- 
 -- Keyboard inputs :
 --
---   F1         : Coin + Start 1 player
---   F2         : Coin + Start 2 players
+--   F1         : Start 1 player
+--   F2         : Start 2 players
+--   F3         : Add Coin
 --   SPACE      : Jump
 --   CTRL,ALT   : Fire
 --   UP,DOWN,LEFT,RIGHT : Movements
 --
 -- Joystick support.
 -- 
+--
+-- Note: in continue screen use combo Fire + 1P/2P to continue
+--
 ---------------------------------------------------------------------------------
 
                                 *** Attention ***

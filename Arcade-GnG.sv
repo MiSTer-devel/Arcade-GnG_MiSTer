@@ -91,20 +91,21 @@ localparam CONF_STR1 = {
 	"O1,Aspect Ratio,Original,Wide;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;", 
 	"-;",
+	"OF,Coin-free play,Yes,No;",
 	"O89,Lives,3,4,5,7;",
 	"OAB,+1 Life,20K 70K Every 70K,30K 80K Every 80K,20K and 80K Only,30K and 80K Only;",
 	"OCD,Difficulty,Normal,Easy,Hard,Very Hard;"
 };
 
 localparam CONF_STR2 = {
-	"E,Invincibility,Off,On;",
+	"E,Invulnerable,No,Yes;",
 	"-;",
 	"O6,PSG,Enabled,Disabled;",
 	"O7,FM,Enabled,Disabled;",
 	"-;",
 	"R0,Reset;",
-	"J,Fire,Jump,Start 1P,Start 2P;",
-	"V,v",`BUILD_DATE, "  http://patreon.com/topapate;"
+	"J,Fire,Jump,Start 1P,Start 2P,Coin;",
+	"V,v",`BUILD_DATE, " http://patreon.com/topapate;"
 };
 
 ////////////////////   CLOCKS   ///////////////////
@@ -179,6 +180,7 @@ always @(posedge clk_sys) begin
 			'h74: btn_right       	<= pressed; // right
 			'h05: btn_one_player   	<= pressed; // F1
 			'h06: btn_two_players  	<= pressed; // F2
+			'h04: btn_coin				<= pressed; // F3
 			'h14: btn_fire1 			<= pressed; // ctrl
 			'h11: btn_fire1 			<= pressed; // alt
 			'h29: btn_fire2   		<= pressed; // Space
@@ -194,6 +196,7 @@ reg btn_down = 0;
 reg btn_up = 0;
 reg btn_fire1 = 0;
 reg btn_fire2 = 0;
+reg btn_coin  = 0;
 
 wire [8:0] joy = joy_0 | joy_1;
 
@@ -204,29 +207,10 @@ wire m_right  = btn_right | joy[0];
 wire m_fire   = btn_fire1 | joy[4];
 wire m_jump   = btn_fire2 | joy[5];
 
-wire start1 = btn_one_player  | joy[6];
-wire start2 = btn_two_players | joy[7];
-wire m_coin = start1 | start2;
+wire m_start1 = btn_one_player  | joy[6];
+wire m_start2 = btn_two_players | joy[7];
+wire m_coin   = btn_coin        | joy[8];
 
-reg m_start1 = 0;
-always @(posedge clk_sys) begin
-	integer to;
-	if(ce_1p5) begin
-		if(to) to <= to - 1;
-		if(start1) to <= 1500000;
-		m_start1 <= to && to<700000;
-	end
-end
-
-reg m_start2 = 0;
-always @(posedge clk_sys) begin
-	integer to;
-	if(ce_1p5) begin
-		if(to) to <= to - 1;
-		if(start2) to <= 1500000;
-		m_start2 <= to && to<700000;
-	end
-end
 
 ///////////////////////////////////////////////////////////////////
 
@@ -291,7 +275,7 @@ jtgng_game game
 	.enable_scr(1),
 	.enable_obj(1),
 
-	.dipsw({~inv_ena | ~status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],8'h5F}),
+	.dipsw({~inv_ena | status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],4'h5,{4{status[15]}}}),
 
 	.enable_psg(~status[6]),
 	.enable_fm(~status[7]),
