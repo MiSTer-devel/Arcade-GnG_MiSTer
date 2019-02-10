@@ -16,7 +16,7 @@
     Version: 1.0
     Date: 23-12-2018 */
 
-module jtgng_dual_clk_ram #(parameter dw=8, aw=10)(
+module jtgng_dual_clk_ram #(parameter dw=8, aw=10, wn=(2**aw))(
     input   clka,
     input   clka_en,
     input   clkb,
@@ -31,7 +31,7 @@ module jtgng_dual_clk_ram #(parameter dw=8, aw=10)(
     output reg [dw-1:0] q_b
 );
 
-reg [dw-1:0] mem[0:(2**aw)-1];
+reg [dw-1:0] mem[0:wn-1];
 
 always @(posedge clka) if(clka_en) begin
     q_a <= mem[addr_a];

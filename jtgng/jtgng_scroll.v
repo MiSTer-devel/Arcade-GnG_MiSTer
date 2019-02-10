@@ -19,6 +19,7 @@
 module jtgng_scroll(
     input              clk,     // 24 MHz
     input              cen6  /* synthesis direct_enable = 1 */,    //  6 MHz
+    input              cen3,
     input       [10:0] AB,
     input       [ 7:0] V128, // V128-V1
     input       [ 8:0] H, // H256-H1
@@ -92,7 +93,7 @@ end
 wire [7:0] dout_low, dout_high;
 assign dout = AB[10] ? dout_high : dout_low;
 
-jtgng_ram #(.aw(10),.simfile("scr_ram.hex")) u_ram_low(
+jtgng_ram #(.aw(10)) u_ram_low(
     .clk    ( clk      ),
     .cen    ( cen6     ),
     .data   ( din      ),
@@ -101,7 +102,7 @@ jtgng_ram #(.aw(10),.simfile("scr_ram.hex")) u_ram_low(
     .q      ( dout_low )
 );
 
-jtgng_ram #(.aw(10),.simfile("scr_att.hex")) u_ram_high(
+jtgng_ram #(.aw(10)) u_ram_high(
     .clk    ( clk      ),
     .cen    ( cen6     ),
     .data   ( din      ),
@@ -110,7 +111,11 @@ jtgng_ram #(.aw(10),.simfile("scr_att.hex")) u_ram_high(
     .q      ( dout_high)
 );
 
+reg sel_scan_last;
 assign MRDY_b = !( scr_cs && sel_scan ); // halt CPU
+
+always @(posedge clk) if(cen6)
+    sel_scan_last <= sel_scan;
 
 reg scr_hflip;
 reg [7:0] addr_lsb;

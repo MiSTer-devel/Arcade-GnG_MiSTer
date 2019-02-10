@@ -110,24 +110,32 @@ localparam CONF_STR2 = {
 
 ////////////////////   CLOCKS   ///////////////////
 
-wire clk_sys;
+wire clk_sys,clk_12;
 
 pll pll
 (
 	.refclk(CLK_50M),
-	.outclk_0(clk_sys)
+	.outclk_0(clk_sys),
+	.outclk_1(clk_12)
 );
 
 reg ce_6, ce_3, ce_1p5;
-always @(negedge clk_sys) begin
-	reg [3:0] div;
+always @(posedge clk_12) begin
+	reg [2:0] div;
 	
 	div <= div + 1'd1;
-	ce_6 <= !div[1:0];
-	ce_3 <= !div[2:0];
-	ce_1p5 <= !div[3:0];
+	ce_6   <= !div[0:0];
+	ce_3   <= !div[1:0];
+	ce_1p5 <= !div[2:0];
 end
 
+reg ce_pix;
+always @(posedge clk_sys) begin
+	reg [1:0] div;
+	
+	div <= div + 1'd1;
+	ce_pix <= !div[1:0];
+end
 
 ///////////////////////////////////////////////////
 
@@ -237,7 +245,7 @@ video_mixer #(.LINE_LENGTH(256), .HALF_DEPTH(1)) video_mixer
 (
 	.*,
 	.clk_sys(VGA_CLK),
-	.ce_pix(ce_6),
+	.ce_pix(ce_pix),
 	.ce_pix_out(VGA_CE),
 
 	.scanlines(0),
@@ -252,7 +260,8 @@ jtgng_game game
 (
 	.rst(RESET | ioctl_download),
 	.soft_rst(status[0] | buttons[1]),
-	.clk(clk_sys),
+	.clk(clk_12),
+	.cen12(1),
 	.cen6(ce_6),
 	.cen3(ce_3),
 	.cen1p5(ce_1p5),
@@ -264,9 +273,12 @@ jtgng_game game
 	.HS(HSync),
 	.VS(VSync),
 
-	.joystick1(~{m_coin,m_start1,m_jump,m_fire,m_up,m_down,m_left,m_right}),
-	.joystick2(~{1'b0,  m_start2,m_jump,m_fire,m_up,m_down,m_left,m_right}),
+	.joystick1(~{m_jump,m_fire,m_up,m_down,m_left,m_right}),
+	.joystick2(~{m_jump,m_fire,m_up,m_down,m_left,m_right}),
+	.start_button(~{m_start2,m_start1}),
+	.coin_input(~{1'b0,m_coin}),
 
+	.romload_clk(clk_sys),
 	.romload_wr(ioctl_wr),
 	.romload_addr(ioctl_addr[18:0]),
 	.romload_data(ioctl_dout),

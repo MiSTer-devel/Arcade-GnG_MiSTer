@@ -20,6 +20,7 @@ module jtgng_video(
     input               rst,    
     input               clk,
     input               cen6,
+    input               cen3,
     input       [10:0]  cpu_AB,
     input       [ 7:0]  V,
     input       [ 8:0]  H,
@@ -77,6 +78,7 @@ localparam scrchr_off = 8'd5;
 jtgng_char #(.Hoffset(scrchr_off)) u_char (
     .clk        ( clk           ),
     .cen6       ( cen6          ),
+    .cen3       ( cen3          ),
     .AB         ( cpu_AB[10:0]  ),
     .V128       ( V[7:0]        ),
     .H128       ( H[7:0]        ),
@@ -99,6 +101,7 @@ assign char_mrdy = 1'b1;
 jtgng_scroll #(.Hoffset(scrchr_off)) u_scroll (
     .clk        ( clk           ),
     .cen6       ( cen6          ),
+    .cen3       ( cen3          ),
     .AB         ( cpu_AB[10:0]  ),
     .V128       ( V[7:0]        ),
     .H          ( H             ),

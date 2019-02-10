@@ -16,9 +16,9 @@
     Version: 1.0
     Date: 27-10-2017 */
 
-module jtgng_ram #(parameter dw=8, aw=10, simfile="ram.hex")(
+module jtgng_ram #(parameter dw=8, aw=10, simfile="", synfile="",cen_rd=0)(
     input   clk,
-    input   cen  /* synthesis direct_enable = 1 */,
+    input   cen,
     input   [dw-1:0] data,
     input   [aw-1:0] addr,
     input   we,
@@ -28,11 +28,28 @@ module jtgng_ram #(parameter dw=8, aw=10, simfile="ram.hex")(
 reg [dw-1:0] mem[0:(2**aw)-1];
 
 `ifdef SIMULATION
-initial $readmemh(simfile, mem );
+integer f, readcnt; 
+initial 
+if( simfile != "" ) begin
+    f=$fopen(simfile,"rb");
+    if( f != 0 ) begin    
+        readcnt=$fread( mem, f );
+        $fclose(f);
+    end else begin
+        $display("WARNING: Cannot open file", simfile);
+    end
+    end
+else begin
+    for( readcnt=0; readcnt<(2**aw)-1; readcnt=readcnt+1 )
+        mem[readcnt] = {dw{1'b0}};
+    end
+`else 
+// file for synthesis:
+initial if(synfile!="" )$readmemh(synfile,mem);
 `endif
 
 always @(posedge clk) begin
-    q <= mem[addr];
+    if( !cen_rd || cen ) q <= mem[addr];
     if( cen && we) mem[addr] <= data;
 end
 

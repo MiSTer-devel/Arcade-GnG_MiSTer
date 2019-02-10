@@ -20,6 +20,7 @@ module jtgng_game(
     input           rst,
     input           soft_rst,
     input           clk,        // 24   MHz
+    input           cen12,      // 12   MHz
     input           cen6,       //  6   MHz
     input           cen3,       //  3   MHz
     input           cen1p5,     //  1.5 MHz
@@ -31,9 +32,12 @@ module jtgng_game(
     output          HS,
     output          VS,
     // cabinet I/O
-    input   [7:0]   joystick1,
-    input   [7:0]   joystick2,  
+    input   [ 1:0]  start_button,
+    input   [ 1:0]  coin_input,
+    input   [ 5:0]  joystick1,
+    input   [ 5:0]  joystick2,  
     // ROM load
+    input           romload_clk,
     input           romload_wr,
     input   [18:0]  romload_addr,
     input    [7:0]  romload_data,
@@ -69,16 +73,17 @@ wire LHBL_obj;
 
 jtgng_timer u_timer(
     .clk       ( clk      ),
-    .clk_en    ( cen6     ),
+    .cen12     ( cen12    ),
+    .cen6      ( cen6     ),
     .rst       ( rst      ),
     .V         ( V        ),
     .H         ( H        ),
     .Hinit     ( HINIT    ),
-    .HS        ( HS       ),
     .LHBL      ( LHBL     ),
     .LHBL_obj  ( LHBL_obj ),
-    .VS        ( VS       ),
     .LVBL      ( LVBL     ),
+    .HS        ( HS       ),
+    .VS        ( VS       ),
     .Vinit     (          )
 );
 
@@ -146,6 +151,8 @@ jtgng_main u_main(
     .RnW        ( RnW           ),
     .rom_addr   ( main_addr     ),
     .rom_dout   ( main_dout     ),
+    .start_button( start_button ),
+    .coin_input ( coin_input    ),
     .joystick1  ( joystick1     ),
     .joystick2  ( joystick2     ),   
 	 .dipsw      ( dipsw         )
@@ -182,6 +189,7 @@ jtgng_video u_video(
     .rst        ( rst           ),
     .clk        ( clk           ),
     .cen6       ( cen6          ),
+    .cen3       ( cen3          ),
     .cpu_AB     ( cpu_AB[10:0]  ),
     .V          ( V[7:0]        ),
     .H          ( H             ),
@@ -243,6 +251,7 @@ jtgng_rom u_rom (
     .scr_dout   ( scr_dout      ),
 
     // ROM load
+	 .romload_clk ( romload_clk  ),
     .romload_wr  ( romload_wr   ),
     .romload_addr( romload_addr ),
     .romload_data( romload_data )

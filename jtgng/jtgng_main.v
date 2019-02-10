@@ -16,13 +16,13 @@
     Version: 1.0
     Date: 27-10-2017 */
 
-`timescale 1ns/1ps
+// Ghosts'n Goblins: Main CPU
 
 module jtgng_main(
     input              clk, 
     input              cen6  /* synthesis direct_enable = 1 */,   // 6MHz
-    input              cen3  /* synthesis direct_enable = 1 */,   // 3MHz
-    input              cen1p5  /* synthesis direct_enable = 1 */,   // 1.5MHz
+    input              cen3,   // 3MHz
+    input              cen1p5,   // 1.5MHz
     input              rst,
     input              soft_rst,
     input              ch_mrdy,
@@ -43,8 +43,10 @@ module jtgng_main(
     output             scr_cs,
     output             scrpos_cs,
     // cabinet I/O
-    input   [7:0]      joystick1,
-    input   [7:0]      joystick2,
+    input   [ 1:0]     start_button,
+    input   [ 1:0]     coin_input,
+    input   [ 5:0]     joystick1,
+    input   [ 5:0]     joystick2,  
     // BUS sharing
     output             bus_ack,
     input              bus_req,
@@ -154,9 +156,9 @@ end
 */
 always @(*)
     case( cpu_AB[3:0])
-        4'd0: cabinet_input = { joystick2[7],joystick1[7], // COINS
+        4'd0: cabinet_input = { coin_input, // COINS
                      4'hf, // undocumented. The game start screen has background when set to 0!
-                     joystick2[6], joystick1[6] }; // START
+                     start_button }; // START
         4'd1: cabinet_input = { 2'b11, joystick1[5:0] };
         4'd2: cabinet_input = { 2'b11, joystick2[5:0] };
         4'd3: cabinet_input = dipsw[7:0];

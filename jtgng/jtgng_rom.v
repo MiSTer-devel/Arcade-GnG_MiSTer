@@ -34,6 +34,7 @@ module jtgng_rom(
     output  reg [23:0]  scr_dout,
 
     // ROM load 
+    input           romload_clk,
     input           romload_wr,
     input   [18:0]  romload_addr,
     input    [7:0]  romload_data
@@ -50,114 +51,132 @@ module jtgng_rom(
 // obj2 50000 10000
 
 
-jtgng_dual_ram #(8,17,81920) main_ram
+jtgng_dual_clk_ram #(8,17,81920) main_ram
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[16:0]),
-    .data(romload_data),
-    .we(romload_wr && !romload_addr[18:17]),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[16:0]),
+    .data_a(romload_data),
+    .we_a(romload_wr && !romload_addr[18:17]),
 
-    .rd_addr(main_addr),
-    .q(main_dout)
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(main_addr),
+    .q_b(main_dout)
 ); 
 
-jtgng_dual_ram #(8,15) snd_ram
+jtgng_dual_clk_ram #(8,15) snd_ram
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[14:0]),
-    .data(romload_data),
-    .we(romload_wr && (romload_addr[18:15] == 'b0011)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[14:0]),
+    .data_a(romload_data),
+    .we_a(romload_wr && (romload_addr[18:15] == 'b0011)),
 
-    .rd_addr(snd_addr),
-    .q(snd_dout)
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(snd_addr),
+    .q_b(snd_dout)
 ); 
 
 wire [15:0] char_d;
-jtgng_dual_ram #(8,13) chr_ram1
+jtgng_dual_clk_ram #(8,13) chr_ram1
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[13:1]),
-    .data(romload_data),
-    .we(romload_wr && romload_addr[0] && (romload_addr[18:14]==5'b00101)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[13:1]),
+    .data_a(romload_data),
+    .we_a(romload_wr && romload_addr[0] && (romload_addr[18:14]==5'b00101)),
 
-    .rd_addr(char_addr),
-    .q(char_d[7:0])
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(char_addr),
+    .q_b(char_d[7:0])
 );
-jtgng_dual_ram #(8,13) chr_ram2
+jtgng_dual_clk_ram #(8,13) chr_ram2
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[13:1]),
-    .data(romload_data),
-    .we(romload_wr && ~romload_addr[0] && (romload_addr[18:14]==5'b00101)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[13:1]),
+    .data_a(romload_data),
+    .we_a(romload_wr && ~romload_addr[0] && (romload_addr[18:14]==5'b00101)),
 
-    .rd_addr(char_addr),
-    .q(char_d[15:8])
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(char_addr),
+    .q_b(char_d[15:8])
 );
 always @(posedge clk) if (cen6 && !H) char_dout <= char_d;
 
 
 wire [23:0] scr_d;
-jtgng_dual_ram #(8,15) scr_ram1
+jtgng_dual_clk_ram #(8,15) scr_ram1
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[14:0]),
-    .data(romload_data),
-    .we(romload_wr && (romload_addr[18:15] == 4'b0100)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[14:0]),
+    .data_a(romload_data),
+    .we_a(romload_wr && (romload_addr[18:15] == 4'b0100)),
 
-    .rd_addr(scr_addr),
-    .q(scr_d[15:8])
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(scr_addr),
+    .q_b(scr_d[15:8])
 );
-jtgng_dual_ram #(8,15) scr_ram2
+jtgng_dual_clk_ram #(8,15) scr_ram2
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[14:0]),
-    .data(romload_data),
-    .we(romload_wr && (romload_addr[18:15] == 4'b0101)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[14:0]),
+    .data_a(romload_data),
+    .we_a(romload_wr && (romload_addr[18:15] == 4'b0101)),
 
-    .rd_addr(scr_addr),
-    .q(scr_d[7:0])
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(scr_addr),
+    .q_b(scr_d[7:0])
 );
-jtgng_dual_ram #(8,15) scr_ram3
+jtgng_dual_clk_ram #(8,15) scr_ram3
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[14:0]),
-    .data(romload_data),
-    .we(romload_wr && (romload_addr[18:15] == 4'b0110)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[14:0]),
+    .data_a(romload_data),
+    .we_a(romload_wr && (romload_addr[18:15] == 4'b0110)),
 
-    .rd_addr(scr_addr),
-    .q(scr_d[23:16])
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(scr_addr),
+    .q_b(scr_d[23:16])
 );
 always @(posedge clk) if (cen6 && !H) scr_dout = scr_d;
 
 
-jtgng_dual_ram #(8,16,49152) obj_ram1
+jtgng_dual_clk_ram #(8,16,49152) obj_ram1
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[15:0]),
-    .data(romload_data),
-    .we(romload_wr && (romload_addr[18:16] == 3'b100)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[15:0]),
+    .data_a(romload_data),
+    .we_a(romload_wr && (romload_addr[18:16] == 3'b100)),
 
-    .rd_addr(obj_addr),
-    .q(obj_dout[15:8])
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(obj_addr),
+    .q_b(obj_dout[15:8])
 );
-jtgng_dual_ram #(8,16,49152) obj_ram2
+jtgng_dual_clk_ram #(8,16,49152) obj_ram2
 (
-    .clk(clk),
-    .clk_en(1),
-    .wr_addr(romload_addr[15:0]),
-    .data(romload_data),
-    .we(romload_wr && (romload_addr[18:16] == 3'b101)),
+    .clka(romload_clk),
+    .clka_en(1),
+    .addr_a(romload_addr[15:0]),
+    .data_a(romload_data),
+    .we_a(romload_wr && (romload_addr[18:16] == 3'b101)),
 
-    .rd_addr(obj_addr),
-    .q(obj_dout[7:0])
+    .clkb(clk),
+    .clkb_en(1),
+    .addr_b(obj_addr),
+    .q_b(obj_dout[7:0])
 );
 
 
