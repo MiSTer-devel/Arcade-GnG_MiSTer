@@ -14,12 +14,12 @@ create_generated_clock -source [get_pins -compatibility_mode {pll_hdmi|pll_hdmi_
 derive_clock_uncertainty
 
 create_generated_clock -name rE \
-                       -source [get_pins -compatibility_mode {*|pll|pll_inst|altera_pll_i|general[0].gpll~PLL_OUTPUT_COUNTER|divclk}] \
+                       -source [get_pins -compatibility_mode {*|pll|pll_inst|altera_pll_i|general[1].gpll~PLL_OUTPUT_COUNTER|divclk}] \
 					   -divide_by 4 -phase 135.000 \
 					   [get_nets {emu:emu|jtgng_game:game|jtgng_main:u_main|mc6809:u_cpu|rE}]
 
 create_generated_clock -name rQ \
-						-source [get_pins -compatibility_mode {*|pll|pll_inst|altera_pll_i|general[0].gpll~PLL_OUTPUT_COUNTER|divclk}] \
+						-source [get_pins -compatibility_mode {*|pll|pll_inst|altera_pll_i|general[1].gpll~PLL_OUTPUT_COUNTER|divclk}] \
 						-divide_by 4 -phase 45.000 \
 						[get_nets {emu:emu|jtgng_game:game|jtgng_main:u_main|mc6809:u_cpu|rQ}]
 
