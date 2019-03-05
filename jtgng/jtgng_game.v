@@ -69,7 +69,7 @@ wire [ 7:0] chram_dout,scram_dout;
 wire [15:0] chrom_data;
 wire rom_ready;
 
-wire LHBL_obj;
+wire LHBL_obj, LVBL_obj;
 
 jtgng_timer u_timer(
     .clk       ( clk      ),
@@ -82,6 +82,7 @@ jtgng_timer u_timer(
     .LHBL      ( LHBL     ),
     .LHBL_obj  ( LHBL_obj ),
     .LVBL      ( LVBL     ),
+    .LVBL_obj  ( LVBL_obj ),
     .HS        ( HS       ),
     .VS        ( VS       ),
     .Vinit     (          )
@@ -223,6 +224,7 @@ jtgng_video u_video(
     .LHBL       ( LHBL          ),       
     .LHBL_obj   ( LHBL_obj      ),       
     .LVBL       ( LVBL          ),
+    .LVBL_obj   ( LVBL_obj      ),
     .blue_cs    ( blue_cs       ),
     .redgreen_cs( redgreen_cs   ),    
     .enable_char( enable_char   ),

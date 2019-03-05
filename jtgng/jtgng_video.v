@@ -17,7 +17,7 @@
     Date: 30-12-2018 */
 
 module jtgng_video(
-    input               rst,    
+    input               rst,
     input               clk,
     input               cen6,
     input               cen3,
@@ -27,6 +27,7 @@ module jtgng_video(
     input               RnW,
     input               flip,
     input       [ 7:0]  cpu_dout,
+    input               pause,
     // CHAR
     input               char_cs,
     output      [ 7:0]  chram_dout,
@@ -35,33 +36,34 @@ module jtgng_video(
     input       [15:0]  chrom_data,
     // SCROLL - ROM
     input               scr_cs,
-    input               scrpos_cs,    
-    output      [ 7:0]  scram_dout,    
+    input               scrpos_cs,
+    output      [ 7:0]  scram_dout,
     output      [14:0]  scr_addr,
-    input       [23:0]  scrom_data,    
+    input       [23:0]  scrom_data,
     output              scr_mrdy,
     // OBJ
-    input               HINIT,    
-    output      [ 8:0]  obj_AB,    
+    input               HINIT,
+    output      [ 8:0]  obj_AB,
     input       [ 7:0]  main_ram,
     input               OKOUT,
     output              bus_req, // Request bus
     input               bus_ack, // bus acknowledge
     output              blcnten,    // bus line counter enable
     output      [15:0]  obj_addr,
-    input       [15:0]  objrom_data,    
+    input       [15:0]  objrom_data,
     // Color Mix
     input               LVBL,
-    input               LHBL,       
-    input               LHBL_obj,       
+    input               LVBL_obj,
+    input               LHBL,
+    input               LHBL_obj,
     input               blue_cs,
-    input               redgreen_cs,    
+    input               redgreen_cs,
     input               enable_char,
     input               enable_obj,
-    input               enable_scr,    
+    input               enable_scr,
     output      [3:0]   red,
     output      [3:0]   green,
-    output      [3:0]   blue    
+    output      [3:0]   blue
 );
 
 wire [3:0] chr_pal;
@@ -84,6 +86,7 @@ jtgng_char #(.Hoffset(scrchr_off)) u_char (
     .H128       ( H[7:0]        ),
     .char_cs    ( char_cs       ),
     .flip       ( flip          ),
+    .pause      ( pause         ),
     .din        ( cpu_dout      ),
     .dout       ( chram_dout    ),
     .rd         ( RnW           ),
@@ -93,7 +96,7 @@ jtgng_char #(.Hoffset(scrchr_off)) u_char (
     .char_col   ( chr_col       ),
     .char_pal   ( chr_pal       )
 );
-`else 
+`else
 assign char_mrdy = 1'b1;
 `endif
 
@@ -118,7 +121,7 @@ jtgng_scroll #(.Hoffset(scrchr_off)) u_scroll (
     .scrom_data ( scrom_data    ),
     .scrwin     ( scrwin        )
 );
-`else 
+`else
 assign scr_mrdy = 1'b1;
 `endif
 
@@ -158,10 +161,10 @@ assign green= 4'd0;
 `endif
 
 
-jtgng_obj u_obj (   
+jtgng_obj u_obj (
     .rst        ( rst         ),
     .clk        ( clk         ),
-    .cen6       ( cen6        ),    
+    .cen6       ( cen6        ),
     .AB         ( obj_AB      ),
     .DB         ( main_ram    ),
     .OKOUT      ( OKOUT       ),
@@ -170,6 +173,7 @@ jtgng_obj u_obj (
     .blen       ( blcnten     ),
     .LHBL       ( LHBL_obj    ),
     .LVBL       ( LVBL        ),
+    .LVBL_obj   ( LVBL_obj    ),
     .HINIT      ( HINIT       ),
     .flip       ( flip        ),
     .V          ( V[7:0]      ),

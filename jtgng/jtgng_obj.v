@@ -15,7 +15,7 @@
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2017 */
-    
+
 module jtgng_obj(
     input              rst,
     input              clk,     // 24 MHz
@@ -24,6 +24,7 @@ module jtgng_obj(
     input              HINIT,
     input              LHBL,
     input              LVBL,
+    input              LVBL_obj,
     input   [ 7:0]     V,
     input   [ 8:0]     H,
     input              flip,
@@ -53,9 +54,9 @@ reg [4:0] objcnt;
 reg [3:0] pxlcnt;
 
 always @(posedge clk) if(cen6) begin
-    if( HINIT ) 
+    if( HINIT )
         { objcnt, pxlcnt } <= {5'd8,4'd0};
-    else 
+    else
         if( objcnt != 5'd0 )  { objcnt, pxlcnt } <=  { objcnt, pxlcnt } + 1'd1;
 end
 
@@ -85,7 +86,7 @@ jtgng_objbuf u_buf(
     .cen6           ( cen6          ),    //  6 MHz
     // screen
     .HINIT          ( HINIT         ),
-    .LVBL           ( LVBL          ),
+    .LVBL           ( LVBL_obj      ),
     .V              ( V             ),
     .VF             ( VF            ),
     .flip           ( flip          ),
@@ -111,7 +112,6 @@ jtgng_objdraw u_draw(
     // screen
     .VF             ( VF            ),
     .pxlcnt         ( pxlcnt        ),
-    .posx           ( posx          ),
     // per-line sprite data
     .objcnt         ( objcnt        ),
     .objbuf_data    ( objbuf_data   ),
@@ -119,24 +119,27 @@ jtgng_objdraw u_draw(
     .obj_addr       ( obj_addr      ),
     .objrom_data    ( objrom_data   ),
     // pixel data
+    .posx           ( posx          ),
     .pospal         ( pospal        ),
     .new_pxl        ( new_pxl       )
 );
 
 // line buffers for pixel data
-jtgng_objpxl u_pxlbuf(
+jtgng_objpxl #(.dw(6),.obj_dly(5'hf),.palw(2)) u_pxlbuf(
     .rst            ( rst           ),
     .clk            ( clk           ),
     .cen6           ( cen6          ),    //  6 MHz
+    .DISPTM_b       ( 1'b0          ),
     // screen
-    .LHBL           ( LHBL          ),    
+    .LHBL           ( LHBL          ),
     .flip           ( flip          ),
+    .objcnt         ( objcnt        ),
     .pxlcnt         ( pxlcnt        ),
     .posx           ( posx          ),
     .line           ( line          ),
     // pixel data
-    .pospal         ( pospal        ),
-    .new_pxl        ( new_pxl       ),
+    // .pospal         ( pospal        ),
+    .new_pxl        ( {pospal, new_pxl}       ),
     .obj_pxl        ( obj_pxl       )
 );
 

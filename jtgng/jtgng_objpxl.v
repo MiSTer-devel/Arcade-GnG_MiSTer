@@ -14,37 +14,37 @@
 
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
-    Date: 11-1-2019 */
+    Date: 20-1-2019 */
 
-module jtgng_objpxl(
+// Object Line Buffer
+
+module jtgng_objpxl #(parameter dw=4,obj_dly = 5'hc,palw=0)(
     input              rst,
     input              clk,     // 24 MHz
     input              cen6,    //  6 MHz
     // screen
-    input              LHBL,    
+    input              DISPTM_b,
+    input              LHBL,
     input              flip,
+    input       [4:0]  objcnt,
     input       [3:0]  pxlcnt,
     input       [8:0]  posx,
     input              line,
     // pixel data
-    input       [1:0]  pospal,
-    input       [3:0]  new_pxl,
-    output reg  [5:0]  obj_pxl
+    input       [dw-1:0]  new_pxl,
+    output reg  [dw-1:0]  obj_pxl
 );
 
 localparam lineA=1'b0, lineB=1'b1;
 
 // Line colour buffer
 
-reg [7:0] lineA_address_a, lineA_address_b;
-reg [7:0] lineB_address_a, lineB_address_b;
+reg [7:0] addrA, addrB;
 reg [7:0] Hcnt;
 
-wire [7:0] lineA_q_a, lineA_q_b;
-wire [7:0] lineB_q_a, lineB_q_b;
-wire [7:0] lineX_data = { 2'b11, pospal, new_pxl };
-
-reg lineA_we_a, lineB_we_a, lineA_we_b, lineB_we_b;
+wire [dw-1:0] lineA_q, lineB_q;
+reg  [dw-1:0] dataA, dataB;
+reg weA, weB;
 
 reg pxlbuf_line;
 
@@ -52,7 +52,7 @@ always @(posedge clk)
     if( rst )
         pxlbuf_line <= lineA;
     else if(cen6) begin
-        if( pxlcnt== 4'hf ) pxlbuf_line<=line; // to account for latency drawing the object
+        if( {objcnt[0],pxlcnt}== obj_dly ) pxlbuf_line<=line; // to account for latency drawing the object
     end
 
 always @(posedge clk) if(cen6) begin
@@ -60,66 +60,60 @@ always @(posedge clk) if(cen6) begin
     else Hcnt <= Hcnt+1'd1;
 end
 
-always @(*)
-    if( pxlbuf_line == lineA ) begin 
-        // lineA readout
-        lineA_address_a = Hcnt;
-        lineA_we_a = 1'b0;
-        obj_pxl = lineA_q_a[5:0];
-        // lineB writein
-        lineB_address_a = {8{flip}} ^ posx[7:0];
-        lineB_we_a = !posx[8] && (lineX_data[3:0]!=4'hf);
-    end else begin
-        // lineA writein
-        lineA_address_a = {8{flip}} ^ posx[7:0];
-        lineA_we_a = !posx[8] && (lineX_data[3:0]!=4'hf);
-        // lineB readout
-        lineB_address_a = Hcnt;
-        lineB_we_a = 1'b0;
-        obj_pxl = lineB_q_a[5:0];
-    end
+wire [dw-1:0] blank = {dw{1'b1}};
+
+reg [7:0]    addr_wr;
+reg [dw-1:0] data_wr;
+reg we_pxl, we0;
+
+//wire we_pxl = !posx[8] && (new_pxl[dw-palw-1:0]!=blank[dw-palw-1:0]); // && !DISPTM_b && LHBL;
 
 always @(posedge clk) if(cen6) begin
-    if( pxlbuf_line == lineA ) begin
-        // lineA clear after each pixel is readout
-        lineA_address_b <= lineA_address_a;
-        lineA_we_b <= 1'b1;
-        // lineB port B unused
-        lineB_we_b <= 1'b0;
-    end
-    else begin
-        // lineA port A unused
-        lineA_we_b <= 1'b0;
-        // lineB clear after each pixel is readout
-        lineB_address_b <= lineB_address_a;
-        lineB_we_b <= 1'b1;
-    end
+    data_wr <= new_pxl;
+    addr_wr <= {8{flip}} ^ posx[7:0];
+    we_pxl  <= !posx[8] && (new_pxl[dw-palw-1:0]!=blank[dw-palw-1:0]); // && !DISPTM_b && LHBL;
+    //we_pxl  <= we0;
 end
 
-jtgng_true_dual_ram #(.aw(8)) lineA_buf(
+always @(*)
+    if( pxlbuf_line == lineA ) begin
+        obj_pxl = !DISPTM_b ? lineA_q : blank;
+        // lineA readout
+        addrA = Hcnt;
+        weA   = 1'b1;
+        dataA = blank;
+        // lineB writein
+        addrB = addr_wr;
+        weB   = we_pxl;
+        dataB = data_wr;
+    end else begin
+        obj_pxl = !DISPTM_b ? lineB_q : blank;
+        // lineA writein
+        addrA = addr_wr;
+        weA   = we_pxl;
+        dataA = data_wr;
+        // lineB readout
+        addrB = Hcnt;
+        weB   = 1'b1;
+        dataB = blank;
+    end
+
+jtgng_ram #(.aw(8),.dw(dw),.cen_rd(0)) lineA_buf(
     .clk     ( clk             ),
-    .clk_en  ( cen6            ),
-    .addr_a  ( lineA_address_a ),
-    .addr_b  ( lineA_address_b ),
-    .data_a  ( lineX_data      ),
-    .data_b  ( 8'hFF           ), // delete only
-    .we_a    ( lineA_we_a      ),
-    .we_b    ( lineA_we_b      ),
-    .q_a     ( lineA_q_a       ),
-    .q_b     (                 )
+    .cen     ( cen6            ),
+    .addr    ( addrA           ),
+    .data    ( dataA           ),
+    .we      ( weA             ),
+    .q       ( lineA_q         )
 );
 
-jtgng_true_dual_ram #(.aw(8)) lineB_buf(
+jtgng_ram #(.aw(8),.dw(dw),.cen_rd(0)) lineB_buf(
     .clk     ( clk             ),
-    .clk_en  ( cen6            ),
-    .addr_a  ( lineB_address_a ),
-    .addr_b  ( lineB_address_b ),
-    .data_a  ( lineX_data      ),
-    .data_b  ( 8'hFF           ), // delete only
-    .we_a    ( lineB_we_a      ),
-    .we_b    ( lineB_we_b      ),
-    .q_a     ( lineB_q_a       ),
-    .q_b     (                 )
+    .cen     ( cen6            ),
+    .addr    ( addrB           ),
+    .data    ( dataB           ),
+    .we      ( weB             ),
+    .q       ( lineB_q         )
 );
 
 endmodule // jtgng_objpxl
