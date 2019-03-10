@@ -88,17 +88,18 @@ assign HDMI_ARY = status[1] ? 8'd9  : 8'd3;
 localparam CONF_STR1 = {
 	"A.GnG;;", 
 	"-;",
+	"F,rom;",
 	"O1,Aspect Ratio,Original,Wide;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;", 
 	"-;",
-	"OF,Coin-free play,Yes,No;",
+	"OF,Test mode,No,Yes;",
 	"O89,Lives,3,4,5,7;",
 	"OAB,+1 Life,20K 70K Every 70K,30K 80K Every 80K,20K and 80K Only,30K and 80K Only;",
 	"OCD,Difficulty,Normal,Easy,Hard,Very Hard;"
 };
 
 localparam CONF_STR2 = {
-	"E,Invulnerable,No,Yes;",
+//	"E,Invulnerable,No,Yes;",
 	"-;",
 	"O6,PSG,Enabled,Disabled;",
 	"O7,FM,Enabled,Disabled;",
@@ -176,6 +177,18 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + 1)) hps_io
 
 wire       pressed = ps2_key[9];
 wire [7:0] code    = ps2_key[7:0];
+
+reg btn_one_player = 0;
+reg btn_two_players = 0;
+reg btn_left = 0;
+reg btn_right = 0;
+reg btn_down = 0;
+reg btn_up = 0;
+reg btn_fire1 = 0;
+reg btn_fire2 = 0;
+reg btn_coin  = 0;
+reg btn_pause = 0;
+
 always @(posedge clk_sys) begin
 	reg old_state;
 	old_state <= ps2_key[10];
@@ -189,6 +202,7 @@ always @(posedge clk_sys) begin
 			'h05: btn_one_player   	<= pressed; // F1
 			'h06: btn_two_players  	<= pressed; // F2
 			'h04: btn_coin				<= pressed; // F3
+			'h0C: btn_pause		<= pressed; // F4
 			'h14: btn_fire1 			<= pressed; // ctrl
 			'h11: btn_fire1 			<= pressed; // alt
 			'h29: btn_fire2   		<= pressed; // Space
@@ -196,17 +210,7 @@ always @(posedge clk_sys) begin
 	end
 end
 
-reg btn_one_player = 0;
-reg btn_two_players = 0;
-reg btn_left = 0;
-reg btn_right = 0;
-reg btn_down = 0;
-reg btn_up = 0;
-reg btn_fire1 = 0;
-reg btn_fire2 = 0;
-reg btn_coin  = 0;
-
-wire [8:0] joy = joy_0 | joy_1;
+wire [9:0] joy = joy_0 | joy_1;
 
 wire m_up     = btn_up    | joy[3];
 wire m_down   = btn_down  | joy[2];
@@ -214,11 +218,20 @@ wire m_left   = btn_left  | joy[1];
 wire m_right  = btn_right | joy[0];
 wire m_fire   = btn_fire1 | joy[4];
 wire m_jump   = btn_fire2 | joy[5];
+wire m_pause  = btn_pause | joy[9];
 
 wire m_start1 = btn_one_player  | joy[6];
 wire m_start2 = btn_two_players | joy[7];
 wire m_coin   = btn_coin        | joy[8];
 
+reg pause = 0;
+always @(posedge clk_sys) begin
+	reg old_pause;
+	
+	old_pause <= m_pause;
+	if(~old_pause & m_pause) pause <= ~pause;
+	if(status[0] | buttons[1]) pause <= 0;
+end
 
 ///////////////////////////////////////////////////////////////////
 
@@ -240,6 +253,11 @@ assign HDMI_SL  = sl[1:0];
 wire [2:0] scale = status[5:3];
 wire [2:0] sl = scale ? scale - 1'd1 : 3'd0;
 wire       scandoubler = (scale || forced_scandoubler); 
+
+wire [1:0]    dip_level = ~status[13:12];
+wire [1:0]    dip_lives = ~status[9:8];
+wire [1:0]    dip_bonus = ~status[11:10];
+wire          dip_test  = ~status[15];
 
 video_mixer #(.LINE_LENGTH(256), .HALF_DEPTH(1)) video_mixer
 (
@@ -287,7 +305,15 @@ jtgng_game game
 	.enable_scr(1),
 	.enable_obj(1),
 
-	.dipsw({~inv_ena | ~status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],4'h5,{4{status[15]}}}),
+//	.dipsw({~inv_ena | ~status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],4'h5,{4{status[15]}}}),
+    // DIP switches
+    .dip_pause      ( ~pause     ),
+    .dip_lives      ( dip_lives  ),
+    .dip_level      ( dip_level  ),
+    .dip_bonus      ( dip_bonus  ),
+    .dip_game_mode  ( dip_test   ),
+    .dip_upright    ( 1'b1       ),
+    .dip_attract_snd( 1'b0       ), // 0 for sound
 
 	.enable_psg(~status[6]),
 	.enable_fm(~status[7]),

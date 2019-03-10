@@ -19,7 +19,7 @@
 // Ghosts'n Goblins: Main CPU
 
 module jtgng_main(
-    input              clk, 
+    input              clk,
     input              cen6  /* synthesis direct_enable = 1 */,   // 6MHz
     input              cen3,   // 3MHz
     input              cen1p5,   // 1.5MHz
@@ -32,7 +32,7 @@ module jtgng_main(
     output             main_cs,
     output             char_cs,
     output             blue_cs,
-    output             redgreen_cs,    
+    output             redgreen_cs,
     output  reg        flip,
     // Sound
     output  reg        sres_b, // Z80 reset
@@ -46,7 +46,7 @@ module jtgng_main(
     input   [ 1:0]     start_button,
     input   [ 1:0]     coin_input,
     input   [ 5:0]     joystick1,
-    input   [ 5:0]     joystick2,  
+    input   [ 5:0]     joystick2,
     // BUS sharing
     output             bus_ack,
     input              bus_req,
@@ -60,7 +60,14 @@ module jtgng_main(
     output  reg [16:0] rom_addr,
     input       [ 7:0] rom_dout,
     // DIP switches
-	 input       [15:0] dipsw
+    input              dip_pause,
+    input              dip_flip,
+    input  [1:0]       dip_lives,
+    input  [1:0]       dip_level,
+    input  [1:0]       dip_bonus,
+    input              dip_game_mode,
+    input              dip_attract_snd,
+    input              dip_upright
 );
 
 wire [15:0] A;
@@ -71,9 +78,9 @@ wire sound_cs, ram_cs, bank_cs, screpos_cs, flip_cs;
 
 reg [11:0] map_cs;
 
-assign { 
-    sound_cs, OKOUT, scrpos_cs,   scr_cs, 
-    in_cs,  blue_cs, redgreen_cs, flip_cs, 
+assign {
+    sound_cs, OKOUT, scrpos_cs,   scr_cs,
+    in_cs,  blue_cs, redgreen_cs, flip_cs,
     ram_cs, char_cs, bank_cs,     main_cs } = map_cs;
 
 reg [7:0] AH;
@@ -81,7 +88,7 @@ reg [7:0] AH;
 always @(*)
     casez(A[15:8])
         8'b0011_1010: map_cs = 12'h800; // 3A00-3AFF, sound
-        8'b0011_1100: map_cs = 12'h400; // OKOUT 
+        8'b0011_1100: map_cs = 12'h400; // OKOUT
         8'b0011_1011: map_cs = 12'h200; // 3B00-3BFF Scroll position
         8'b0010_1???: map_cs = 12'h100; // 2800-2FFF    Scroll
         8'b0011_0???: map_cs = 12'h080; // 3000-37FF input
@@ -121,7 +128,7 @@ always @(posedge clk)
         sres_b <= 1'b1;
         end
     else if(cen6) begin
-        if( flip_cs ) 
+        if( flip_cs )
             case(A[2:0])
                 3'd0: flip <= cpu_dout[0];
                 3'd1: sres_b <= cpu_dout[0];
@@ -132,37 +139,25 @@ always @(posedge clk)
     end
 
 always @(posedge clk)
-    if( rst ) 
+    if( rst )
         snd_latch <= 8'd0;
     else if(cen6) begin
         if( sound_cs ) snd_latch <= cpu_dout;
     end
 
 reg [7:0] cabinet_input;
+wire [7:0] dipsw_a = { dip_flip, dip_game_mode, dip_attract_snd, 5'h1F /* 1 coin, 1 credit */ };
+wire [7:0] dipsw_b = { dip_level, dip_bonus, dip_upright, dip_lives };
 
-//wire [7:0] dipsw_a = { dip_flip, dip_game_mode, dip_attract_snd, 5'h1F /* 1 coin, 1 credit */ };
-//wire [7:0] dipsw_b = { 3'd3, /* normal game */
-//    2'd3, /* bonus at 20k and every 70k */
-//    dip_upright, 2'd3 /* 3 lifes */ };
-
-/*
-reg [7:0] joystick1_sync, joystick2_sync;
-
-// 1 FF synchronizer
-always @(negedge clk) begin
-    joystick1_sync <= joystick1;
-    joystick2_sync <= joystick2;
-end
-*/
 always @(*)
     case( cpu_AB[3:0])
         4'd0: cabinet_input = { coin_input, // COINS
                      4'hf, // undocumented. The game start screen has background when set to 0!
                      start_button }; // START
-        4'd1: cabinet_input = { 2'b11, joystick1[5:0] };
-        4'd2: cabinet_input = { 2'b11, joystick2[5:0] };
-        4'd3: cabinet_input = dipsw[7:0];
-        4'd4: cabinet_input = dipsw[15:8];
+        4'd1: cabinet_input = { 2'b11, joystick1 };
+        4'd2: cabinet_input = { 2'b11, joystick2 };
+        4'd3: cabinet_input = dipsw_a;
+        4'd4: cabinet_input = dipsw_b;
         default: cabinet_input = 8'hff;
     endcase
 
@@ -216,7 +211,7 @@ always @(posedge clk) if(cen6) begin
     last_LVBL <= LVBL;
     if( {BS,BA}==2'b10 )
         nIRQ <= 1'b1;
-    else 
+    else
         if(last_LVBL && !LVBL ) nIRQ<=1'b0; // when LVBL goes low
 end
 
@@ -233,7 +228,7 @@ mc6809 u_cpu (
     .RnW     ( RnW     ),
     .BS      ( BS      ),
     .BA      ( BA      ),
-    .nIRQ    ( nIRQ    ),
+    .nIRQ    ( nIRQ | ~dip_pause ),
     .nFIRQ   ( 1'b1    ),
     .nNMI    ( 1'b1    ),
     .EXTAL   ( EXTAL   ),
@@ -263,13 +258,13 @@ reg [95:0] last_regdata;
 integer fout;
 integer ticks=0, last_ticks=0;
 initial begin
-    fout = $fopen("m6809.log","w");    
+    fout = $fopen("m6809.log","w");
 end
 always @(negedge E) begin
     last_regdata <= RegData[95:0];
     ticks <= ticks+1;
     if( last_regdata != RegData[95:0] ) begin
-        $fwrite(fout,"%d,%X, %X,%X,%X,%X,%X,%X,%X,%X,%X\n", 
+        $fwrite(fout,"%d,%X, %X,%X,%X,%X,%X,%X,%X,%X,%X\n",
             ticks-last_ticks, nIRQ,
             reg_pc, reg_cc, reg_dp, reg_x, reg_y, reg_s, reg_u,
             reg_a, reg_b);
@@ -277,7 +272,7 @@ always @(negedge E) begin
     end
 end
 `endif
-`else 
+`else
 // This is cpu09I_128a.vhd core
 // but it doesn't seem to work fine
 cpu09 u_cpu(
@@ -301,27 +296,5 @@ cpu09 u_cpu(
     .opfetch (           )
 );
 `endif
-/*
-`ifndef VERILATOR_LINT
-wire VMA;
-mc6809_cen cpu (
-    .clk     ( clk     ),
-    .clk_en  ( cen6    ),
-    .D       ( cpu_din ),
-    .DOut    ( cpu_dout),
-    .ADDR    ( A       ),
-    .RnW     ( RnW     ),
-    .BS      ( BS      ),
-    .BA      ( BA      ),
-    .nIRQ    ( nIRQ    ),
-    .nFIRQ   ( 1'b1    ),
-    .nNMI    ( 1'b1    ),
-    .nHALT   ( ~bus_req),
-    .nRESET  ( nRESET  ),
-    .MRDY    ( MRDY_b  ),
-    .nDMABREQ( 1'b1    ),
-    .VMA     ( VMA     )
-);
-`endif
-*/
+
 endmodule // jtgng_main

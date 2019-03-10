@@ -46,7 +46,13 @@ module jtgng_game(
     input           enable_obj,
     input           enable_scr,
     // DIP switches
-	 input   [15:0]  dipsw,
+    input           dip_pause, // Not a DIP on the original PCB
+    input   [ 1:0]  dip_lives,
+    input   [ 1:0]  dip_level,
+    input   [ 1:0]  dip_bonus,
+    input           dip_game_mode,
+    input           dip_attract_snd,
+    input           dip_upright,
     // Sound output
     input           enable_psg,
     input           enable_fm,
@@ -156,7 +162,15 @@ jtgng_main u_main(
     .coin_input ( coin_input    ),
     .joystick1  ( joystick1     ),
     .joystick2  ( joystick2     ),   
-	 .dipsw      ( dipsw         )
+    // DIP switches
+    .dip_pause      ( dip_pause       ),
+    .dip_flip       ( 1'b0            ),
+    .dip_lives      ( dip_lives       ),
+    .dip_level      ( dip_level       ),
+    .dip_bonus      ( dip_bonus       ),
+    .dip_game_mode  ( dip_game_mode   ),
+    .dip_attract_snd( dip_attract_snd ),
+    .dip_upright    ( dip_upright     )
 );
 
 wire [15:0] obj_addr;
@@ -197,6 +211,7 @@ jtgng_video u_video(
     .RnW        ( RnW           ),
     .flip       ( flip          ),
     .cpu_dout   ( cpu_dout      ),
+    .pause      ( !dip_pause    ),
     // CHAR
     .char_cs    ( char_cs       ),
     .chram_dout ( chram_dout    ),
@@ -253,7 +268,7 @@ jtgng_rom u_rom (
     .scr_dout   ( scr_dout      ),
 
     // ROM load
-	 .romload_clk ( romload_clk  ),
+     .romload_clk ( romload_clk  ),
     .romload_wr  ( romload_wr   ),
     .romload_addr( romload_addr ),
     .romload_data( romload_data )
