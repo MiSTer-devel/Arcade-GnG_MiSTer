@@ -16,9 +16,11 @@
 --   SPACE      : Jump
 --   CTRL,ALT   : Fire
 --   UP,DOWN,LEFT,RIGHT : Movements
---
--- Joystick support.
--- 
+--   
+-- Joystick inputs:
+--   Joypad Button 1    : Jump
+--   Joypad Button 2,3  : Fire
+--   UP,DOWN,LEFT,RIGHT : Movements
 --
 -- Note: in continue screen use combo Fire + 1P/2P to continue
 --
