@@ -29,7 +29,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [44:0] HPS_BUS,
+	inout  [45:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        VGA_CLK,
@@ -44,6 +44,7 @@ module emu
 	output        VGA_HS,
 	output        VGA_VS,
 	output        VGA_DE,    // = ~(VBlank | HBlank)
+	output        VGA_F1,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        HDMI_CLK,
@@ -74,9 +75,19 @@ module emu
 
 	output [15:0] AUDIO_L,
 	output [15:0] AUDIO_R,
-	output        AUDIO_S    // 1 - signed audio samples, 0 - unsigned
+	output        AUDIO_S,    // 1 - signed audio samples, 0 - unsigned
+
+	// Open-drain User port.
+	// 0 - D+/RX
+	// 1 - D-/TX
+	// 2..6 - USR2..USR6
+	// Set USER_OUT to 1 to read from USER_IN.
+	input   [6:0] USER_IN,
+	output  [6:0] USER_OUT
 );
 
+assign VGA_F1    = 0;
+assign USER_OUT  = '1;
 assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
@@ -85,39 +96,37 @@ assign HDMI_ARX = status[1] ? 8'd16 : 8'd4;
 assign HDMI_ARY = status[1] ? 8'd9  : 8'd3;
 
 `include "build_id.v" 
-localparam CONF_STR1 = {
+localparam CONF_STR = {
 	"A.GnG;;", 
 	"-;",
-	"F,rom;",
-	"O1,Aspect Ratio,Original,Wide;",
+	"H0O1,Aspect Ratio,Original,Wide;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;", 
 	"-;",
 	"OF,Test mode,No,Yes;",
 	"O89,Lives,3,4,5,7;",
 	"OAB,+1 Life,20K 70K Every 70K,30K 80K Every 80K,20K and 80K Only,30K and 80K Only;",
-	"OCD,Difficulty,Normal,Easy,Hard,Very Hard;"
-};
-
-localparam CONF_STR2 = {
-//	"E,Invulnerable,No,Yes;",
+	"OCD,Difficulty,Normal,Easy,Hard,Very Hard;",
+	"H1OE,Invulnerable,No,Yes;",
 	"-;",
 	"O6,PSG,Enabled,Disabled;",
 	"O7,FM,Enabled,Disabled;",
 	"-;",
 	"R0,Reset;",
-	"J,Fire,Jump,Start 1P,Start 2P,Coin;",
-	"V,v",`BUILD_DATE, " http://patreon.com/topapate;"
+	"J1,Fire,Jump,Start 1P,Start 2P,Coin;",
+	"jn,A,B,Start,Select,R;",
+	"V,v",`BUILD_DATE
 };
 
 ////////////////////   CLOCKS   ///////////////////
 
-wire clk_sys,clk_12;
+wire clk_sys,clk_12,clk_vid;
 
 pll pll
 (
 	.refclk(CLK_50M),
-	.outclk_0(clk_sys),
-	.outclk_1(clk_12)
+	.outclk_0(clk_vid),
+	.outclk_1(clk_sys),
+	.outclk_2(clk_12)
 );
 
 reg ce_6, ce_3, ce_1p5;
@@ -142,6 +151,8 @@ end
 
 wire [31:0] status;
 wire  [1:0] buttons;
+wire        forced_scandoubler;
+wire        direct_video;
 
 wire        ioctl_download;
 wire        ioctl_wr;
@@ -152,18 +163,21 @@ wire [10:0] ps2_key;
 
 wire  [8:0] joy_0, joy_1;
 
-wire        forced_scandoubler;
+wire [21:0] gamma_bus;
 
-hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + 1)) hps_io
+hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
 
-	.conf_str({CONF_STR1,inv_ena ? "O" : "+",CONF_STR2}),
+	.conf_str(CONF_STR),
 
 	.buttons(buttons),
 	.status(status),
+	.status_menumask({~inv_ena,direct_video}),
 	.forced_scandoubler(forced_scandoubler),
+	.gamma_bus(gamma_bus),
+	.direct_video(direct_video),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_wr(ioctl_wr),
@@ -202,7 +216,7 @@ always @(posedge clk_sys) begin
 			'h05: btn_one_player   	<= pressed; // F1
 			'h06: btn_two_players  	<= pressed; // F2
 			'h04: btn_coin				<= pressed; // F3
-			'h0C: btn_pause		<= pressed; // F4
+			'h0C: btn_pause			<= pressed; // F4
 			'h14: btn_fire1 			<= pressed; // ctrl
 			'h11: btn_fire1 			<= pressed; // alt
 			'h29: btn_fire2   		<= pressed; // Space
@@ -239,39 +253,19 @@ end
 wire [3:0] R,G,B;
 wire HSync,VSync,HBlank,VBlank;
 
-assign VGA_CLK  = clk_sys;
-assign HDMI_CLK = VGA_CLK;
-assign HDMI_CE  = VGA_CE;
-assign HDMI_R   = VGA_R;
-assign HDMI_G   = VGA_G;
-assign HDMI_B   = VGA_B;
-assign HDMI_DE  = VGA_DE;
-assign HDMI_HS  = VGA_HS;
-assign HDMI_VS  = VGA_VS;
-assign HDMI_SL  = sl[1:0];
-
-wire [2:0] scale = status[5:3];
-wire [2:0] sl = scale ? scale - 1'd1 : 3'd0;
-wire       scandoubler = (scale || forced_scandoubler); 
-
 wire [1:0]    dip_level = ~status[13:12];
 wire [1:0]    dip_lives = ~status[9:8];
 wire [1:0]    dip_bonus = ~status[11:10];
 wire          dip_test  = ~status[15];
 
-video_mixer #(.LINE_LENGTH(256), .HALF_DEPTH(1)) video_mixer
+arcade_fx #(256,12) arcade_video
 (
 	.*,
-	.clk_sys(VGA_CLK),
-	.ce_pix(ce_pix),
-	.ce_pix_out(VGA_CE),
-
-	.scanlines(0),
-	.hq2x(scale==1),
-	.mono(0),
-	
+	.clk_video(clk_vid),
 	.HBlank(~HBlank),
-	.VBlank(~VBlank)
+	.VBlank(~VBlank),
+	.RGB_in({R,G,B}),
+	.fx(status[5:3])
 );
 
 jtgng_game game
@@ -307,13 +301,14 @@ jtgng_game game
 
 //	.dipsw({~inv_ena | ~status[14],~status[13:12],~status[11:10],1'b0,~status[9:8],4'h5,{4{status[15]}}}),
     // DIP switches
-    .dip_pause      ( ~pause     ),
-    .dip_lives      ( dip_lives  ),
-    .dip_level      ( dip_level  ),
-    .dip_bonus      ( dip_bonus  ),
-    .dip_game_mode  ( dip_test   ),
-    .dip_upright    ( 1'b1       ),
-    .dip_attract_snd( 1'b0       ), // 0 for sound
+	.dip_pause      ( ~pause     ),
+	.dip_inv        ( ~inv_ena | ~status[14] ),
+	.dip_lives      ( dip_lives  ),
+	.dip_level      ( dip_level  ),
+	.dip_bonus      ( dip_bonus  ),
+	.dip_game_mode  ( dip_test   ),
+	.dip_upright    ( 1'b1       ),
+	.dip_attract_snd( 1'b0       ), // 0 for sound
 
 	.enable_psg(~status[6]),
 	.enable_fm(~status[7]),

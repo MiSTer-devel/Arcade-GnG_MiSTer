@@ -47,6 +47,7 @@ module jtgng_game(
     input           enable_scr,
     // DIP switches
     input           dip_pause, // Not a DIP on the original PCB
+    input           dip_inv,
     input   [ 1:0]  dip_lives,
     input   [ 1:0]  dip_level,
     input   [ 1:0]  dip_bonus,
@@ -165,6 +166,7 @@ jtgng_main u_main(
     // DIP switches
     .dip_pause      ( dip_pause       ),
     .dip_flip       ( 1'b0            ),
+    .dip_inv        ( dip_inv         ),
     .dip_lives      ( dip_lives       ),
     .dip_level      ( dip_level       ),
     .dip_bonus      ( dip_bonus       ),
