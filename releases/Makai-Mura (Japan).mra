@@ -1,75 +1,34 @@
 <misterromdescription>
-  <name>Makai-Mura (Japan)</name>
-  <mameversion>0216</mameversion>
-  <mratimestamp>201911270000</mratimestamp>
-  <rbf>gng</rbf>
-  <rom index="0" md5="f80a619acf3e03db0b5c38e1559d9932" type="merged" zip="gng.zip">
-    <part name="makaimur/8n.rom"/>
-    <part name="makaimur/10n.rom"/>
-    <part name="makaimur/12n.rom"/>
-    <part name="gg1.bin"/>
-    <part name="gg2.bin"/>
-    <part name="gg9.bin"/>
-    <part name="gg8.bin"/>
-    <part name="gg7.bin"/>
-    <part name="gg6.bin"/>
-    <part name="gg11.bin"/>
-    <part name="gg10.bin"/>
-    <part name="gg11.bin"/>
-    <part name="gg10.bin"/>
-    <part name="gngbl/19.84472.4n"/>
-    <part name="gg16.bin"/>
-    <part name="gg15.bin"/>
-    <part name="gg15.bin"/>
-    <part name="gngbl/16.84472.4l"/>
-    <part name="gg13.bin"/>
-    <part name="gg12.bin"/>
-    <part name="gg12.bin"/>
-  </rom>
-  <rom index="0" md5="f80a619acf3e03db0b5c38e1559d9932" type="split" zip="makaimur.zip">
-    <part name="8n.rom"/>
-    <part name="10n.rom"/>
-    <part name="12n.rom"/>
-    <part name="gg1.bin" zip="gng.zip"/>
-    <part name="gg2.bin" zip="gng.zip"/>
-    <part name="gg9.bin" zip="gng.zip"/>
-    <part name="gg8.bin" zip="gng.zip"/>
-    <part name="gg7.bin" zip="gng.zip"/>
-    <part name="gg6.bin" zip="gng.zip"/>
-    <part name="gg11.bin" zip="gng.zip"/>
-    <part name="gg10.bin" zip="gng.zip"/>
-    <part name="gg11.bin" zip="gng.zip"/>
-    <part name="gg10.bin" zip="gng.zip"/>
-    <part name="gng13.n4"/>
-    <part name="gg16.bin" zip="gng.zip"/>
-    <part name="gg15.bin" zip="gng.zip"/>
-    <part name="gg15.bin" zip="gng.zip"/>
-    <part name="gng16.l4"/>
-    <part name="gg13.bin" zip="gng.zip"/>
-    <part name="gg12.bin" zip="gng.zip"/>
-    <part name="gg12.bin" zip="gng.zip"/>
-  </rom>
-  <rom index="0" md5="f80a619acf3e03db0b5c38e1559d9932" type="nonmerged" zip="makaimur.zip">
-    <part name="8n.rom"/>
-    <part name="10n.rom"/>
-    <part name="12n.rom"/>
-    <part name="gg1.bin"/>
-    <part name="gg2.bin"/>
-    <part name="gg9.bin"/>
-    <part name="gg8.bin"/>
-    <part name="gg7.bin"/>
-    <part name="gg6.bin"/>
-    <part name="gg11.bin"/>
-    <part name="gg10.bin"/>
-    <part name="gg11.bin"/>
-    <part name="gg10.bin"/>
-    <part name="gng13.n4"/>
-    <part name="gg16.bin"/>
-    <part name="gg15.bin"/>
-    <part name="gg15.bin"/>
-    <part name="gng16.l4"/>
-    <part name="gg13.bin"/>
-    <part name="gg12.bin"/>
-    <part name="gg12.bin"/>
-  </rom>
+	<name>Makai-Mura (Japan)</name>
+	<mameversion>0220</mameversion>
+	<setname>makaimur</setname>
+	<mratimestamp>20200430143028</mratimestamp>
+	<year>1985</year>
+	<manufacturer>Capcom</manufacturer>
+	<category>Adventure / Knights</category>
+	<category>Fighter / Warriors</category>
+	<rbf>gng</rbf>
+	<rom index="0" zip="gng.zip|makaimur.zip" md5="f80a619acf3e03db0b5c38e1559d9932">
+		<part crc="9612d66c" name="8n.rom"/>
+		<part crc="81e567e0" name="10n.rom"/>
+		<part crc="65a6a97b" name="12n.rom"/>
+		<part crc="ecfccf07" name="gg1.bin"/>
+		<part crc="615f5b6f" name="gg2.bin"/>
+		<part crc="20035bda" name="gg9.bin"/>
+		<part crc="f12ba271" name="gg8.bin"/>
+		<part crc="e525207d" name="gg7.bin"/>
+		<part crc="2d77e9b2" name="gg6.bin"/>
+		<part crc="ddd56fa9" name="gg11.bin"/>
+		<part crc="7302529d" name="gg10.bin"/>
+		<part crc="ddd56fa9" name="gg11.bin"/>
+		<part crc="7302529d" name="gg10.bin"/>
+		<part crc="4613afdc" name="gng13.n4"/>
+		<part crc="06d7e5ca" name="gg16.bin"/>
+		<part crc="bc1fe02d" name="gg15.bin"/>
+		<part crc="bc1fe02d" name="gg15.bin"/>
+		<part crc="608d68d5" name="gng16.l4"/>
+		<part crc="e80c3fca" name="gg13.bin"/>
+		<part crc="7780a925" name="gg12.bin"/>
+		<part crc="7780a925" name="gg12.bin"/>
+	</rom>
 </misterromdescription>
